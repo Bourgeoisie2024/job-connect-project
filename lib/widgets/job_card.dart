@@ -1,7 +1,5 @@
-// Reusable job card widget
 import 'package:flutter/material.dart';
 import 'package:job_connect/models/job.dart';
-import 'package:job_connect/screens/job/job_details_screen.dart';
 import 'package:timeago/timeago.dart' as timeago;
 
 class JobCard extends StatelessWidget {
@@ -17,11 +15,10 @@ class JobCard extends StatelessWidget {
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
       child: InkWell(
-        onTap: () => Navigator.push(
+        onTap: () => Navigator.pushNamed(
           context,
-          MaterialPageRoute(
-            builder: (context) => JobDetailsScreen(job: job),
-          ),
+          '/job-details',
+          arguments: job,
         ),
         child: Padding(
           padding: const EdgeInsets.all(16),

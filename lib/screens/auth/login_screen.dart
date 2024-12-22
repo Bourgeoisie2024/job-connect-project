@@ -1,6 +1,7 @@
 // Login screen implementation
 import 'package:flutter/material.dart';
 import 'package:job_connect/theme/app_theme.dart';
+import 'package:job_connect/services/navigation_service.dart'; // This was imported so i can login and view app pages before Firebase is authenticated.
 import 'package:job_connect/screens/auth/signup_screen.dart';
 import 'package:job_connect/screens/auth/forgot_password_screen.dart';
 import 'package:job_connect/widgets/custom_button.dart';
@@ -150,6 +151,9 @@ class _LoginScreenState extends State<LoginScreen> {
   void _handleLogin() {
     if (_formKey.currentState!.validate()) {
       // TODO: Implement login logic with Firebase
+      // For now, navigate directly to home for testing
+      NavigationService.navigateToHome(
+          context); // this was done to enable me see the app pages before firebase is authenticated.
       debugPrint('Login pressed');
     }
   }

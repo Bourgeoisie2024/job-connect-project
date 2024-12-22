@@ -1,6 +1,7 @@
 // Sign up screen implementation
 import 'package:flutter/material.dart';
 import 'package:job_connect/theme/app_theme.dart';
+import 'package:job_connect/services/navigation_service.dart'; // This was imported so i can login and view app pages before Firebase is authenticated.
 import 'package:job_connect/widgets/custom_button.dart';
 import 'package:job_connect/widgets/custom_text_field.dart';
 
