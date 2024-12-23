@@ -1,11 +1,12 @@
 // Login screen implementation
 import 'package:flutter/material.dart';
-import 'package:job_connect/theme/app_theme.dart';
-import 'package:job_connect/services/navigation_service.dart'; // This was imported so i can login and view app pages before Firebase is authenticated.
+// import 'package:job_connect/services/navigation_service.dart'; // This was imported so i can login and view app pages before Firebase is authenticated.
 import 'package:job_connect/screens/auth/signup_screen.dart';
 import 'package:job_connect/screens/auth/forgot_password_screen.dart';
 import 'package:job_connect/widgets/custom_button.dart';
 import 'package:job_connect/widgets/custom_text_field.dart';
+import 'package:provider/provider.dart';
+import 'package:job_connect/providers/auth_provider.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -18,7 +19,8 @@ class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
-  bool _isPasswordVisible = false;
+  bool _isLoading = false;
+  bool _obscurePassword = true;
 
   @override
   Widget build(BuildContext context) {
@@ -36,17 +38,18 @@ class _LoginScreenState extends State<LoginScreen> {
                 Image.asset(
                   'assets/images/logo.png',
                   height: 100,
+                  width: 100,
                 ),
-                const SizedBox(height: 32),
+                const SizedBox(height: 24),
                 // Welcome Text
                 Text(
-                  'Welcome Back!',
+                  'Welcome Back',
                   style: Theme.of(context).textTheme.headlineMedium,
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Sign in to continue your job search journey',
+                  'Sign in to continue',
                   style: Theme.of(context).textTheme.bodyMedium,
                   textAlign: TextAlign.center,
                 ),
@@ -73,19 +76,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   controller: _passwordController,
                   label: 'Password',
                   hint: 'Enter your password',
-                  obscureText: !_isPasswordVisible,
-                  suffixIcon: IconButton(
-                    icon: Icon(
-                      _isPasswordVisible
-                          ? Icons.visibility_off
-                          : Icons.visibility,
-                    ),
-                    onPressed: () {
-                      setState(() {
-                        _isPasswordVisible = !_isPasswordVisible;
-                      });
-                    },
-                  ),
+                  obscureText: _obscurePassword,
                   validator: (value) {
                     if (value == null || value.isEmpty) {
                       return 'Please enter your password';
@@ -95,6 +86,18 @@ class _LoginScreenState extends State<LoginScreen> {
                     }
                     return null;
                   },
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      _obscurePassword
+                          ? Icons.visibility
+                          : Icons.visibility_off,
+                    ),
+                    onPressed: () {
+                      setState(() {
+                        _obscurePassword = !_obscurePassword;
+                      });
+                    },
+                  ),
                 ),
                 const SizedBox(height: 16),
                 // Forgot Password Link
@@ -116,6 +119,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 // Login Button
                 CustomButton(
                   text: 'Login',
+                  isLoading: _isLoading,
                   onPressed: _handleLogin,
                 ),
                 const SizedBox(height: 24),
@@ -123,10 +127,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Text(
-                      'Don\'t have an account? ',
-                      style: Theme.of(context).textTheme.bodyMedium,
-                    ),
+                    const Text("Don't have an account?"),
                     TextButton(
                       onPressed: () {
                         Navigator.push(
@@ -148,13 +149,32 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  void _handleLogin() {
-    if (_formKey.currentState!.validate()) {
-      // TODO: Implement login logic with Firebase
-      // For now, navigate directly to home for testing
-      NavigationService.navigateToHome(
-          context); // this was done to enable me see the app pages before firebase is authenticated.
-      debugPrint('Login pressed');
+  Future<void> _handleLogin() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    setState(() => _isLoading = true);
+
+    try {
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      await authProvider.signIn(
+        email: _emailController.text.trim(),
+        password: _passwordController.text,
+      );
+
+      if (mounted) {
+        // Navigate to home screen on successful login
+        Navigator.pushReplacementNamed(context, '/home');
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.toString())),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 
