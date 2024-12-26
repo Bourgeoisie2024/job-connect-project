@@ -1,8 +1,9 @@
 // Forgot password screen implementation
 import 'package:flutter/material.dart';
-import 'package:job_connect/theme/app_theme.dart';
 import 'package:job_connect/widgets/custom_button.dart';
 import 'package:job_connect/widgets/custom_text_field.dart';
+import 'package:provider/provider.dart';
+import 'package:job_connect/providers/auth_provider.dart';
 
 class ForgotPasswordScreen extends StatefulWidget {
   const ForgotPasswordScreen({super.key});
@@ -14,6 +15,7 @@ class ForgotPasswordScreen extends StatefulWidget {
 class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
+  bool _isLoading = false;
 
   @override
   Widget build(BuildContext context) {
@@ -42,7 +44,6 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 32),
-                // Email Field
                 CustomTextField(
                   controller: _emailController,
                   label: 'Email',
@@ -59,9 +60,9 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                   },
                 ),
                 const SizedBox(height: 32),
-                // Reset Password Button
                 CustomButton(
                   text: 'Send Reset Link',
+                  isLoading: _isLoading,
                   onPressed: _handleResetPassword,
                 ),
               ],
@@ -72,10 +73,33 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     );
   }
 
-  void _handleResetPassword() {
-    if (_formKey.currentState!.validate()) {
-      // TODO: Implement password reset logic with Firebase
-      debugPrint('Reset password pressed');
+  Future<void> _handleResetPassword() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    setState(() => _isLoading = true);
+
+    try {
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      await authProvider.resetPassword(_emailController.text.trim());
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Password reset link sent to your email'),
+          ),
+        );
+        Navigator.pop(context);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.toString())),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 

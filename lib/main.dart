@@ -10,6 +10,8 @@ import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
 import 'package:provider/provider.dart';
 import 'package:job_connect/providers/auth_provider.dart'; // this and the one above are imported for auth_provider.dart
+import 'package:job_connect/providers/profile_provider.dart';
+import 'package:job_connect/providers/job_provider.dart';
 
 void main() async {
   // Ensure Flutter bindings are initialized
@@ -31,6 +33,8 @@ class JobConnectApp extends StatelessWidget {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => AuthProvider()),
+        ChangeNotifierProvider(create: (_) => ProfileProvider()), // just added
+        ChangeNotifierProvider(create: (_) => JobProvider()), // just added
       ],
       child: MaterialApp(
         title: 'JobConnect',

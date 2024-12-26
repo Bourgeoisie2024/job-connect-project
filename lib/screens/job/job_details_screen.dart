@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:job_connect/models/job.dart';
 import 'package:job_connect/widgets/custom_button.dart';
 import 'package:timeago/timeago.dart' as timeago;
+import 'package:provider/provider.dart';
+import 'package:job_connect/providers/job_provider.dart';
+import 'package:job_connect/providers/auth_provider.dart';
 
 class JobDetailsScreen extends StatelessWidget {
   final Job job;
@@ -17,14 +20,21 @@ class JobDetailsScreen extends StatelessWidget {
       appBar: AppBar(
         title: const Text('Job Details'),
         actions: [
-          IconButton(
-            icon: Icon(
-              job.isSaved ? Icons.bookmark : Icons.bookmark_border,
-              color: job.isSaved ? Theme.of(context).primaryColor : null,
+          Consumer<JobProvider>(
+            builder: (context, jobProvider, _) => IconButton(
+              icon: Icon(
+                job.isSaved ? Icons.bookmark : Icons.bookmark_border,
+                color: job.isSaved ? Theme.of(context).primaryColor : null,
+              ),
+              onPressed: () {
+                final authProvider =
+                    Provider.of<AuthProvider>(context, listen: false);
+                jobProvider.toggleSaveJob(
+                  authProvider.user!.uid,
+                  job.id,
+                );
+              },
             ),
-            onPressed: () {
-              // TODO: Implement save functionality
-            },
           ),
         ],
       ),
@@ -209,14 +219,66 @@ class JobDetailsScreen extends StatelessWidget {
       ),
       child: CustomButton(
         text: 'Apply Now',
-        onPressed: () {
-          // TODO: Implement apply functionality
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Application feature coming soon!'),
+        onPressed: () => _showApplicationDialog(context),
+      ),
+    );
+  }
+
+  void _showApplicationDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Apply for Job'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+                'Are you sure you want to apply for ${job.title} at ${job.company}?'),
+            const SizedBox(height: 16),
+            const Text(
+              'Your profile and resume will be shared with the employer.',
+              style: TextStyle(fontSize: 12, color: Colors.grey),
             ),
-          );
-        },
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              final authProvider =
+                  Provider.of<AuthProvider>(context, listen: false);
+              final jobProvider =
+                  Provider.of<JobProvider>(context, listen: false);
+
+              try {
+                await jobProvider.applyForJob(
+                  authProvider.user!.uid,
+                  job.id,
+                  {'status': 'pending'},
+                );
+
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Application submitted successfully!'),
+                    ),
+                  );
+                }
+              } catch (e) {
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text(e.toString())),
+                  );
+                }
+              }
+            },
+            child: const Text('Apply'),
+          ),
+        ],
       ),
     );
   }

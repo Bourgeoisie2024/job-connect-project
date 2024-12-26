@@ -1,8 +1,32 @@
 import 'package:flutter/material.dart';
+import 'package:job_connect/screens/profile/edit_profile_screen.dart';
 import 'package:job_connect/widgets/custom_button.dart';
+import 'package:provider/provider.dart';
+import 'package:job_connect/providers/auth_provider.dart';
+import 'package:job_connect/providers/profile_provider.dart';
 
-class ProfileScreen extends StatelessWidget {
+class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
+
+  @override
+  State<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends State<ProfileScreen> {
+  @override
+  void initState() {
+    super.initState();
+    _loadProfile();
+  }
+
+  Future<void> _loadProfile() async {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    if (authProvider.user != null) {
+      final profileProvider =
+          Provider.of<ProfileProvider>(context, listen: false);
+      await profileProvider.loadProfile(authProvider.user!.uid);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -12,47 +36,56 @@ class ProfileScreen extends StatelessWidget {
         actions: [
           IconButton(
             icon: const Icon(Icons.edit),
-            onPressed: () {
-              // TODO: Navigate to edit profile screen
-            },
+            onPressed: () => _navigateToEditProfile(context),
           ),
         ],
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            _buildProfileHeader(),
-            const SizedBox(height: 24),
-            _buildProfileSection(context),
-            const SizedBox(height: 24),
-            _buildActionButtons(context),
-          ],
-        ),
+      body: Consumer2<AuthProvider, ProfileProvider>(
+        builder: (context, authProvider, profileProvider, _) {
+          if (profileProvider.isLoading) {
+            return const Center(child: CircularProgressIndicator());
+          }
+
+          final profile = profileProvider.profile;
+          if (profile == null) {
+            return const Center(child: Text('Profile not found'));
+          }
+
+          return SingleChildScrollView(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              children: [
+                _buildProfileHeader(profile),
+                const SizedBox(height: 24),
+                _buildProfileSection(context, profile),
+                const SizedBox(height: 24),
+                _buildActionButtons(context, authProvider),
+              ],
+            ),
+          );
+        },
       ),
     );
   }
 
-  Widget _buildProfileHeader() {
+  Widget _buildProfileHeader(UserProfile profile) {
     return Column(
       children: [
-        const CircleAvatar(
+        CircleAvatar(
           radius: 50,
-          backgroundImage: NetworkImage(
-            'https://ui-avatars.com/api/?name=John+Doe&size=200',
-          ),
+          backgroundImage: NetworkImage(profile.avatarUrl),
         ),
         const SizedBox(height: 16),
-        const Text(
-          'John Doe',
-          style: TextStyle(
+        Text(
+          profile.name,
+          style: const TextStyle(
             fontSize: 24,
             fontWeight: FontWeight.bold,
           ),
         ),
         const SizedBox(height: 8),
         Text(
-          'Software Developer',
+          profile.title,
           style: TextStyle(
             fontSize: 16,
             color: Colors.grey[600],
@@ -62,7 +95,7 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildProfileSection(BuildContext context) {
+  Widget _buildProfileSection(BuildContext context, UserProfile profile) {
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -70,22 +103,18 @@ class ProfileScreen extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _buildSectionTitle('Contact Information'),
-            _buildInfoTile(Icons.email, 'john.doe@example.com'),
-            _buildInfoTile(Icons.phone, '+1 234 567 890'),
-            _buildInfoTile(Icons.location_on, 'New York, USA'),
+            _buildInfoTile(Icons.email, profile.email),
+            _buildInfoTile(Icons.phone, profile.phone),
+            _buildInfoTile(Icons.location_on, profile.location),
             const Divider(height: 32),
             _buildSectionTitle('Skills'),
             const SizedBox(height: 8),
             Wrap(
               spacing: 8,
               runSpacing: 8,
-              children: [
-                'Flutter',
-                'Dart',
-                'Firebase',
-                'UI/UX',
-                'Git',
-              ].map((skill) => _buildSkillChip(skill)).toList(),
+              children: profile.skills
+                  .map((skill) => _buildSkillChip(skill))
+                  .toList(),
             ),
           ],
         ),
@@ -130,24 +159,51 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildActionButtons(BuildContext context) {
+  Widget _buildActionButtons(BuildContext context, AuthProvider authProvider) {
     return Column(
       children: [
         CustomButton(
           text: 'Edit Profile',
-          onPressed: () {
-            // TODO: Navigate to edit profile screen
-          },
+          onPressed: () => _navigateToEditProfile(context),
         ),
         const SizedBox(height: 12),
         CustomButton(
           text: 'Logout',
           isOutlined: true,
-          onPressed: () {
-            // TODO: Implement logout functionality
+          onPressed: () async {
+            try {
+              await authProvider.signOut();
+              if (mounted) {
+                Navigator.pushReplacementNamed(context, '/login');
+              }
+            } catch (e) {
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text(e.toString())),
+                );
+              }
+            }
           },
         ),
       ],
     );
+  }
+
+  void _navigateToEditProfile(BuildContext context) async {
+    final profileProvider =
+        Provider.of<ProfileProvider>(context, listen: false);
+    if (profileProvider.profile != null) {
+      final result = await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) =>
+              EditProfileScreen(profile: profileProvider.profile!),
+        ),
+      );
+
+      if (result != null) {
+        _loadProfile();
+      }
+    }
   }
 }

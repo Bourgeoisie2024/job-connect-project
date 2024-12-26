@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:job_connect/screens/onboarding_screen.dart';
 import 'package:job_connect/theme/app_theme.dart';
+import 'package:job_connect/navigation/app_navigation.dart';
+import 'package:provider/provider.dart';
+import 'package:job_connect/providers/auth_provider.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -18,22 +21,40 @@ class _SplashScreenState extends State<SplashScreen>
   void initState() {
     super.initState();
 
-    // Initialize animation controller
     _controller = AnimationController(
       duration: const Duration(milliseconds: 1500),
       vsync: this,
     );
 
-    // Create fade animation
     _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(parent: _controller, curve: Curves.easeIn),
     );
 
-    // Start animation
     _controller.forward();
 
-    // Navigate to onboarding screen after delay
-    Future.delayed(const Duration(milliseconds: 2500), () {
+    // Check authentication state after animation
+    Future.delayed(const Duration(milliseconds: 2000), () {
+      _checkAuthState();
+    });
+  }
+
+  void _checkAuthState() {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+
+    if (authProvider.isAuthenticated) {
+      // User is logged in, navigate to home
+      Navigator.pushReplacement(
+        context,
+        PageRouteBuilder(
+          pageBuilder: (context, animation, secondaryAnimation) =>
+              const AppNavigation(),
+          transitionsBuilder: (context, animation, secondaryAnimation, child) {
+            return FadeTransition(opacity: animation, child: child);
+          },
+        ),
+      );
+    } else {
+      // User is not logged in, show onboarding
       Navigator.pushReplacement(
         context,
         PageRouteBuilder(
@@ -42,16 +63,9 @@ class _SplashScreenState extends State<SplashScreen>
           transitionsBuilder: (context, animation, secondaryAnimation, child) {
             return FadeTransition(opacity: animation, child: child);
           },
-          transitionDuration: const Duration(milliseconds: 500),
         ),
       );
-    });
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
+    }
   }
 
   @override
@@ -64,14 +78,12 @@ class _SplashScreenState extends State<SplashScreen>
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              // App logo
               Image.asset(
                 'assets/images/logo.png',
                 height: 120,
                 width: 120,
               ),
               const SizedBox(height: 24),
-              // App name with custom styling
               const Text(
                 'JobConnect',
                 style: TextStyle(
@@ -82,7 +94,6 @@ class _SplashScreenState extends State<SplashScreen>
                 ),
               ),
               const SizedBox(height: 16),
-              // Tagline
               const Text(
                 'Your Career Journey Starts Here',
                 style: TextStyle(
@@ -96,5 +107,11 @@ class _SplashScreenState extends State<SplashScreen>
         ),
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
   }
 }

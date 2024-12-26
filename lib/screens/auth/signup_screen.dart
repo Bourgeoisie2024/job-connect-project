@@ -1,9 +1,10 @@
 // Sign up screen implementation
 import 'package:flutter/material.dart';
-import 'package:job_connect/theme/app_theme.dart';
-import 'package:job_connect/services/navigation_service.dart'; // This was imported so i can login and view app pages before Firebase is authenticated.
+// This was imported so i can login and view app pages before Firebase is authenticated.
 import 'package:job_connect/widgets/custom_button.dart';
 import 'package:job_connect/widgets/custom_text_field.dart';
+import 'package:provider/provider.dart';
+import 'package:job_connect/providers/auth_provider.dart';
 
 class SignupScreen extends StatefulWidget {
   const SignupScreen({super.key});
@@ -18,8 +19,9 @@ class _SignupScreenState extends State<SignupScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
-  bool _isPasswordVisible = false;
-  bool _isConfirmPasswordVisible = false;
+  bool _isLoading = false;
+  bool _obscurePassword = true;
+  bool _obscureConfirmPassword = true;
 
   @override
   Widget build(BuildContext context) {
@@ -35,20 +37,7 @@ class _SignupScreenState extends State<SignupScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                const SizedBox(height: 24),
-                Text(
-                  'Join JobConnect',
-                  style: Theme.of(context).textTheme.headlineMedium,
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'Create an account to start your job search',
-                  style: Theme.of(context).textTheme.bodyMedium,
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 32),
-                // Full Name Field
+                // Name Field
                 CustomTextField(
                   controller: _nameController,
                   label: 'Full Name',
@@ -61,6 +50,7 @@ class _SignupScreenState extends State<SignupScreen> {
                   },
                 ),
                 const SizedBox(height: 16),
+
                 // Email Field
                 CustomTextField(
                   controller: _emailController,
@@ -78,24 +68,13 @@ class _SignupScreenState extends State<SignupScreen> {
                   },
                 ),
                 const SizedBox(height: 16),
+
                 // Password Field
                 CustomTextField(
                   controller: _passwordController,
                   label: 'Password',
                   hint: 'Create a password',
-                  obscureText: !_isPasswordVisible,
-                  suffixIcon: IconButton(
-                    icon: Icon(
-                      _isPasswordVisible
-                          ? Icons.visibility_off
-                          : Icons.visibility,
-                    ),
-                    onPressed: () {
-                      setState(() {
-                        _isPasswordVisible = !_isPasswordVisible;
-                      });
-                    },
-                  ),
+                  obscureText: _obscurePassword,
                   validator: (value) {
                     if (value == null || value.isEmpty) {
                       return 'Please enter a password';
@@ -105,26 +84,27 @@ class _SignupScreenState extends State<SignupScreen> {
                     }
                     return null;
                   },
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      _obscurePassword
+                          ? Icons.visibility
+                          : Icons.visibility_off,
+                    ),
+                    onPressed: () {
+                      setState(() {
+                        _obscurePassword = !_obscurePassword;
+                      });
+                    },
+                  ),
                 ),
                 const SizedBox(height: 16),
+
                 // Confirm Password Field
                 CustomTextField(
                   controller: _confirmPasswordController,
                   label: 'Confirm Password',
                   hint: 'Confirm your password',
-                  obscureText: !_isConfirmPasswordVisible,
-                  suffixIcon: IconButton(
-                    icon: Icon(
-                      _isConfirmPasswordVisible
-                          ? Icons.visibility_off
-                          : Icons.visibility,
-                    ),
-                    onPressed: () {
-                      setState(() {
-                        _isConfirmPasswordVisible = !_isConfirmPasswordVisible;
-                      });
-                    },
-                  ),
+                  obscureText: _obscureConfirmPassword,
                   validator: (value) {
                     if (value == null || value.isEmpty) {
                       return 'Please confirm your password';
@@ -134,27 +114,35 @@ class _SignupScreenState extends State<SignupScreen> {
                     }
                     return null;
                   },
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      _obscureConfirmPassword
+                          ? Icons.visibility
+                          : Icons.visibility_off,
+                    ),
+                    onPressed: () {
+                      setState(() {
+                        _obscureConfirmPassword = !_obscureConfirmPassword;
+                      });
+                    },
+                  ),
                 ),
-                const SizedBox(height: 32),
+                const SizedBox(height: 24),
+
                 // Sign Up Button
                 CustomButton(
                   text: 'Create Account',
+                  isLoading: _isLoading,
                   onPressed: _handleSignup,
                 ),
-                const SizedBox(height: 24),
-                // Login Link
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      'Already have an account? ',
-                      style: Theme.of(context).textTheme.bodyMedium,
-                    ),
-                    TextButton(
-                      onPressed: () => Navigator.pop(context),
-                      child: const Text('Login'),
-                    ),
-                  ],
+
+                const SizedBox(height: 16),
+
+                // Terms and Privacy Policy
+                Text(
+                  'By signing up, you agree to our Terms of Service and Privacy Policy',
+                  style: Theme.of(context).textTheme.bodySmall,
+                  textAlign: TextAlign.center,
                 ),
               ],
             ),
@@ -164,10 +152,33 @@ class _SignupScreenState extends State<SignupScreen> {
     );
   }
 
-  void _handleSignup() {
-    if (_formKey.currentState!.validate()) {
-      // TODO: Implement signup logic with Firebase
-      debugPrint('Signup pressed');
+  Future<void> _handleSignup() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    setState(() => _isLoading = true);
+
+    try {
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      await authProvider.signUp(
+        email: _emailController.text.trim(),
+        password: _passwordController.text,
+        name: _nameController.text.trim(),
+      );
+
+      if (mounted) {
+        // Navigate to home screen on successful signup
+        Navigator.pushReplacementNamed(context, '/home');
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.toString())),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 

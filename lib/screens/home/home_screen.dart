@@ -4,6 +4,9 @@ import 'package:job_connect/widgets/job_card.dart';
 import 'package:job_connect/widgets/search_bar.dart';
 import 'package:job_connect/widgets/filter_bottom_sheet.dart';
 import 'package:job_connect/widgets/animated_list_item.dart';
+import 'package:provider/provider.dart';
+import 'package:job_connect/providers/job_provider.dart';
+import 'package:job_connect/providers/auth_provider.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -13,47 +16,33 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  final List<Job> _allJobs = [
-    Job(
-      id: '1',
-      title: 'Senior Flutter Developer',
-      company: 'Google',
-      location: 'Mountain View, CA',
-      salary: '\$120,000 - \$150,000',
-      type: 'Full-time',
-      description: 'We are looking for an experienced Flutter developer...',
-      logoUrl: 'https://logo.clearbit.com/google.com',
-      requirements: [
-        'Bachelor\'s degree in Computer Science',
-        '5+ years of Flutter experience',
-        'Strong problem-solving skills'
-      ],
-      postedDate: DateTime.now().subtract(const Duration(days: 2)),
-    ),
-    // Add more sample jobs here
-  ];
-
-  List<Job> _filteredJobs = [];
+  final ScrollController _scrollController = ScrollController();
   JobFilter _currentFilter = JobFilter(jobTypes: []);
 
   @override
   void initState() {
     super.initState();
-    _filteredJobs = List.from(_allJobs);
+    _loadJobs();
+    _scrollController.addListener(_onScroll);
+  }
+
+  Future<void> _loadJobs() async {
+    final jobProvider = Provider.of<JobProvider>(context, listen: false);
+    await jobProvider.loadJobs();
+  }
+
+  void _onScroll() {
+    if (_scrollController.position.pixels >=
+        _scrollController.position.maxScrollExtent - 200) {
+      final jobProvider = Provider.of<JobProvider>(context, listen: false);
+      if (!jobProvider.isLoading && jobProvider.hasMore) {
+        jobProvider.loadMoreJobs();
+      }
+    }
   }
 
   void _handleSearch(String query) {
-    setState(() {
-      _filteredJobs = _allJobs.where((job) {
-        final titleMatch =
-            job.title.toLowerCase().contains(query.toLowerCase());
-        final companyMatch =
-            job.company.toLowerCase().contains(query.toLowerCase());
-        final locationMatch =
-            job.location.toLowerCase().contains(query.toLowerCase());
-        return titleMatch || companyMatch || locationMatch;
-      }).toList();
-    });
+    // Implement search functionality
   }
 
   void _showFilterBottomSheet() {
@@ -69,32 +58,12 @@ class _HomeScreenState extends State<HomeScreen> {
           onApply: (filter) {
             setState(() {
               _currentFilter = filter;
-              _applyFilters();
+              _loadJobs(); // Reload jobs with new filters
             });
           },
         ),
       ),
     );
-  }
-
-  void _applyFilters() {
-    setState(() {
-      _filteredJobs = _allJobs.where((job) {
-        if (_currentFilter.jobTypes.isNotEmpty &&
-            !_currentFilter.jobTypes.contains(job.type)) {
-          return false;
-        }
-        if (_currentFilter.location != null &&
-            _currentFilter.location!.isNotEmpty &&
-            !job.location
-                .toLowerCase()
-                .contains(_currentFilter.location!.toLowerCase())) {
-          return false;
-        }
-        // Add salary filter logic here if needed
-        return true;
-      }).toList();
-    });
   }
 
   @override
@@ -108,30 +77,33 @@ class _HomeScreenState extends State<HomeScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Hello, User!',
-                            style: Theme.of(context).textTheme.titleLarge,
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            'Find your dream job',
-                            style: Theme.of(context).textTheme.bodyMedium,
-                          ),
-                        ],
-                      ),
-                      const CircleAvatar(
-                        radius: 24,
-                        backgroundImage: NetworkImage(
-                          'https://ui-avatars.com/api/?name=User&background=random',
+                  Consumer<AuthProvider>(
+                    builder: (context, authProvider, _) => Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Hello, ${authProvider.user?.displayName ?? 'User'}!',
+                              style: Theme.of(context).textTheme.titleLarge,
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'Find your dream job',
+                              style: Theme.of(context).textTheme.bodyMedium,
+                            ),
+                          ],
                         ),
-                      ),
-                    ],
+                        CircleAvatar(
+                          radius: 24,
+                          backgroundImage: NetworkImage(
+                            authProvider.user?.photoURL ??
+                                'https://ui-avatars.com/api/?name=${authProvider.user?.displayName ?? 'User'}&background=random',
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                   const SizedBox(height: 16),
                   CustomSearchBar(
@@ -142,13 +114,63 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
             Expanded(
-              child: ListView.builder(
-                padding: const EdgeInsets.all(16),
-                itemCount: _filteredJobs.length,
-                itemBuilder: (context, index) {
-                  return AnimatedListItem(
-                    index: index,
-                    child: JobCard(job: _filteredJobs[index]),
+              child: Consumer<JobProvider>(
+                builder: (context, jobProvider, _) {
+                  if (jobProvider.isLoading && jobProvider.jobs.isEmpty) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
+
+                  if (jobProvider.jobs.isEmpty) {
+                    return Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.work_outline,
+                            size: 64,
+                            color: Colors.grey[400],
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            'No jobs found',
+                            style: Theme.of(context).textTheme.titleLarge,
+                          ),
+                        ],
+                      ),
+                    );
+                  }
+
+                  return ListView.builder(
+                    controller: _scrollController,
+                    padding: const EdgeInsets.all(16),
+                    itemCount:
+                        jobProvider.jobs.length + (jobProvider.hasMore ? 1 : 0),
+                    itemBuilder: (context, index) {
+                      if (index == jobProvider.jobs.length) {
+                        return const Center(
+                          child: Padding(
+                            padding: EdgeInsets.all(16.0),
+                            child: CircularProgressIndicator(),
+                          ),
+                        );
+                      }
+
+                      return AnimatedListItem(
+                        index: index,
+                        child: JobCard(
+                          job: jobProvider.jobs[index],
+                          onSave: () {
+                            final authProvider = Provider.of<AuthProvider>(
+                                context,
+                                listen: false);
+                            jobProvider.toggleSaveJob(
+                              authProvider.user!.uid,
+                              jobProvider.jobs[index].id,
+                            );
+                          },
+                        ),
+                      );
+                    },
                   );
                 },
               ),
@@ -157,5 +179,11 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
   }
 }

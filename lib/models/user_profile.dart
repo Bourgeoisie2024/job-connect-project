@@ -17,6 +17,33 @@ class UserProfile {
     required this.avatarUrl,
   });
 
+  // Add fromMap constructor
+  factory UserProfile.fromMap(Map<String, dynamic> map) {
+    return UserProfile(
+      name: map['name'] ?? '',
+      title: map['title'] ?? '',
+      email: map['email'] ?? '',
+      phone: map['phone'] ?? '',
+      location: map['location'] ?? '',
+      skills: List<String>.from(map['skills'] ?? []),
+      avatarUrl: map['avatarUrl'] ?? '',
+    );
+  }
+
+  // Add toMap method
+  Map<String, dynamic> toMap() {
+    return {
+      'name': name,
+      'title': title,
+      'email': email,
+      'phone': phone,
+      'location': location,
+      'skills': skills,
+      'avatarUrl': avatarUrl,
+    };
+  }
+
+  // Add copyWith method
   UserProfile copyWith({
     String? name,
     String? title,

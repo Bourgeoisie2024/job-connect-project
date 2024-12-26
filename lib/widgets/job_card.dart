@@ -4,10 +4,12 @@ import 'package:timeago/timeago.dart' as timeago;
 
 class JobCard extends StatelessWidget {
   final Job job;
+  final VoidCallback? onSave; // Make onSave optional
 
   const JobCard({
     super.key,
     required this.job,
+    this.onSave, // Add this parameter
   });
 
   @override

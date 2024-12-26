@@ -42,7 +42,38 @@ class AuthService {
   }
 
   // Create user profile in Firestore
-  Future<void> _createUserProfile(String userId, Map<String, dynamic> data) async {
+  Future<UserCredential> signIn({
+    required String email,
+    required String password,
+  }) async {
+    try {
+      return await _auth.signInWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+    } catch (e) {
+      throw _handleAuthError(e);
+    }
+  }
+
+  Future<void> signOut() async {
+    try {
+      await _auth.signOut();
+    } catch (e) {
+      throw _handleAuthError(e);
+    }
+  }
+
+  Future<void> resetPassword(String email) async {
+    try {
+      await _auth.sendPasswordResetEmail(email: email);
+    } catch (e) {
+      throw _handleAuthError(e);
+    }
+  }
+
+  Future<void> _createUserProfile(
+      String userId, Map<String, dynamic> data) async {
     await _db.collection('users').doc(userId).set(data);
   }
 
@@ -56,11 +87,14 @@ class AuthService {
           return Exception('Password is too weak');
         case 'invalid-email':
           return Exception('Invalid email address');
+        case 'user-not-found':
+          return Exception('No user found with this email');
+        case 'wrong-password':
+          return Exception('Incorrect password');
         default:
-          return Exception('Authentication failed');
+          return Exception('Authentication failed: ${error.message}');
       }
     }
     return Exception('An unexpected error occurred');
   }
 }
-```
