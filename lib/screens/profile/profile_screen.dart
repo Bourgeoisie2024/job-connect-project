@@ -4,6 +4,7 @@ import 'package:job_connect/widgets/custom_button.dart';
 import 'package:provider/provider.dart';
 import 'package:job_connect/providers/auth_provider.dart';
 import 'package:job_connect/providers/profile_provider.dart';
+import 'package:job_connect/models/user_profile.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
