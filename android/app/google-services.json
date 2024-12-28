@@ -1,13 +1,13 @@
 {
   "project_info": {
-    "project_number": "401111344230",
-    "project_id": "jobconnect-1681a",
-    "storage_bucket": "jobconnect-1681a.firebasestorage.app"
+    "project_number": "261732648325",
+    "project_id": "jobconnect-efaee",
+    "storage_bucket": "jobconnect-efaee.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:401111344230:android:98df7b101a5848cf7779a7",
+        "mobilesdk_app_id": "1:261732648325:android:6a4e57cb3090622cc970ec",
         "android_client_info": {
           "package_name": "com.example.job_connect"
         }
@@ -15,7 +15,7 @@
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyDp-CVzCEz_oIoi0ZOgqeeHiWz_PHz09ok"
+          "current_key": "AIzaSyCCeNHkJF3gSQlheFsQ1ZZYoThdp9Re2eQ"
         }
       ],
       "services": {

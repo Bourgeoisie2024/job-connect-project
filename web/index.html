@@ -1,36 +1,27 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <script src="https://www.gstatic.com/firebasejs/9.8.4/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.10.0/firebase-auth.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.8/firebase-firestore.js"></script>
+    <!-- Update Firebase scripts to use type="module" -->
+    <script type="module">
+      import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+      import { getAuth } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+      import { getFirestore } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-    <script>
       const firebaseConfig = {
-        apiKey: "AIzaSyAFFKnYWDNpr8zvOYMpLD1_dAkN1iQGIkI",
-        authDomain: "jobconnect-1681a.firebaseapp.com",
-        projectId: "jobconnect-1681a",
-        storageBucket: "jobconnect-1681a.firebasestorage.app",
-        messagingSenderId: "401111344230",
-        appId: "1:401111344230:web:b41ede176bdff0be7779a7",
+        apiKey: "${FIREBASE_API_KEY_WEB}",
+        authDomain: "${FIREBASE_AUTH_DOMAIN_WEB}",
+        projectId: "${FIREBASE_PROJECT_ID_WEB}",
+        storageBucket: "${FIREBASE_STORAGE_BUCKET_WEB}",
+        messagingSenderId: "${FIREBASE_MESSAGING_SENDER_ID_WEB}",
+        appId: "${FIREBASE_APP_ID_WEB}",
       };
 
       // Initialize Firebase
-      firebase.initializeApp(firebaseConfig);
+      const app = initializeApp(firebaseConfig);
+      const auth = getAuth(app);
+      const firestore = getFirestore(app);
     </script>
-    <!--
-    If you are serving your web app in a path other than the root, change the
-    href value below to reflect the base path you are serving from.
 
-    The path provided below has to start and end with a slash "/" in order for
-    it to work correctly.
-
-    For more details:
-    * https://developer.mozilla.org/en-US/docs/Web/HTML/Element/base
-
-    This is a placeholder for base href that will be replaced by the value of
-    the `--base-href` argument provided to `flutter build`.
-  -->
     <base href="$FLUTTER_BASE_HREF" />
 
     <meta charset="UTF-8" />

@@ -154,6 +154,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         location: _locationController.text,
         skills: _skills,
         avatarUrl: widget.profile.avatarUrl,
+        role: widget.profile.role, // Add this line to validate UserProfile
       );
 
       // TODO: Save profile changes to backend

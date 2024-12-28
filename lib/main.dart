@@ -12,15 +12,28 @@ import 'package:provider/provider.dart';
 import 'package:job_connect/providers/auth_provider.dart'; // this and the one above are imported for auth_provider.dart
 import 'package:job_connect/providers/profile_provider.dart';
 import 'package:job_connect/providers/job_provider.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 void main() async {
   // Ensure Flutter bindings are initialized
   WidgetsFlutterBinding.ensureInitialized();
 
+  // Load environment variables first
+  await dotenv.load(fileName: ".env");
+
   // Initialize Firebase
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+
+  // Test Firebase Initialization (Added)
+  try {
+    await Firebase.initializeApp();
+    print('Firebase Initialized Successfully!');
+  } catch (e) {
+    print('Error initializing Firebase: $e');
+  }
+
   runApp(const JobConnectApp());
 }
 

@@ -1,3 +1,7 @@
+// lib/models/user_profile.dart
+
+enum UserRole { jobSeeker, employer }
+
 class UserProfile {
   final String name;
   final String title;
@@ -6,6 +10,7 @@ class UserProfile {
   final String location;
   final List<String> skills;
   final String avatarUrl;
+  final UserRole role;
 
   UserProfile({
     required this.name,
@@ -15,6 +20,7 @@ class UserProfile {
     required this.location,
     required this.skills,
     required this.avatarUrl,
+    required this.role,
   });
 
   // Add fromMap constructor
@@ -27,6 +33,9 @@ class UserProfile {
       location: map['location'] ?? '',
       skills: List<String>.from(map['skills'] ?? []),
       avatarUrl: map['avatarUrl'] ?? '',
+      role: UserRole.values.firstWhere(
+          (element) => element.toString() == map['role'],
+          orElse: () => UserRole.jobSeeker),
     );
   }
 
@@ -40,6 +49,7 @@ class UserProfile {
       'location': location,
       'skills': skills,
       'avatarUrl': avatarUrl,
+      'role': role.toString(),
     };
   }
 
@@ -52,6 +62,7 @@ class UserProfile {
     String? location,
     List<String>? skills,
     String? avatarUrl,
+    UserRole? role,
   }) {
     return UserProfile(
       name: name ?? this.name,
@@ -61,6 +72,7 @@ class UserProfile {
       location: location ?? this.location,
       skills: skills ?? this.skills,
       avatarUrl: avatarUrl ?? this.avatarUrl,
+      role: role ?? this.role,
     );
   }
 }
