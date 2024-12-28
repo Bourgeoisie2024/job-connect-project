@@ -70,5 +70,4 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## Developer
 
 - Bakare Olawale Al-Amin
-- aleenolawalebakare@gmail.com
-- +4915212118827 & +2348039284760
+- alameenolawalebakare@gmail.com
